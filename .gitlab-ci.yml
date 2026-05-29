@@ -1,0 +1,52 @@
+
+# -------------------------
+# ÉTAPES
+# Regrouper les pipelines sous un même label
+# -------------------------
+stages:
+  - pipelines
+
+
+
+# -------------------------
+# AVANT LE PIPELINE
+# Affichage d'un texte pour notifier le départ du pipeline
+# -------------------------
+before_script:
+  - echo "[INFO] Lancement du pipeline"
+
+
+
+# -------------------------
+# APRÈS LE PIPELINE
+# Affichage d'un texte pour notifier la fin du pipeline
+# -------------------------
+after_script:
+  - echo "[INFO] Fin de l'exécution du pipeline"
+
+
+
+# -------------------------
+# CHILD PIPELINE
+# Utilisation d'enfants pour exécuter les différentes parties dans des environnements isolés
+# Le but étant d'éviter les conflits entre les environnements et de lancer les pipelines seulement en cas de modification
+# -------------------------
+trigger_kotlin:
+  stage: pipelines
+  trigger:
+    include: 'Applications/mobile-kotlin-multiplateform/.ci_kotlin.yml'
+    strategy: depend
+  rules:
+    - changes:
+        - Applications/mobile-kotlin-multiplateform/**/*
+    - when: never
+
+trigger_electron:
+  stage: pipelines
+  trigger:
+    include: 'Applications/pc-electron-react/.ci_electron.yml'
+    strategy: depend
+  rules:
+    - changes:
+        - Applications/pc-electron-react/**/*
+    - when: never

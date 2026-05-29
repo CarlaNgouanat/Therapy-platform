@@ -1,0 +1,13 @@
+{
+  "name": "opencode",
+  "version": "0.1.0",
+  "description": "OpenCode CLI",
+  "bin": {
+    "opencode": "./bin/opencode.js",
+    "opencode.cmd": "./bin/opencode.cmd"
+  },
+  "engines": {
+    "node": ">=14"
+  },
+  "license": "MIT"
+}
