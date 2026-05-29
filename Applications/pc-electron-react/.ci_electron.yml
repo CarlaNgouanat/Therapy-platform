@@ -1,0 +1,227 @@
+# -------------------------
+# ÉTAPES
+# Liste des étapes du pipeline
+# Chaque étape correspond à une catégorie à exécuter dans le pipeline
+# Ici, on commence par :
+# - Installer les dépendances (install)
+# - Construire l'application (build)
+# - Exécuter les tests unitaires (test)
+# - Vérifier le déploiement de l'application (deploy)
+# -------------------------
+stages:
+  - install
+  - prettier
+  - lint
+  - build
+  - test
+  - deploy
+  - docs
+
+# -------------------------
+# VARIABLES
+# -------------------------
+variables:
+  # -------------------------
+  # ELECTRON_DIR
+  # Lien vers le dossier electron
+  # -------------------------
+  ELECTRON_DIR: 'Applications/pc-electron-react'
+
+  # -------------------------
+  # ELECTRON_CACHE_DIR
+  # Lien vers le dossier contenant le cache
+  # -------------------------
+  ELECTRON_CACHE_DIR: '$ELECTRON_DIR/.npm'
+
+# -------------------------
+# IMAGE
+# Version de Node (20) à utiliser pour exécuter les pipes
+# -------------------------
+image: node:20
+
+# -------------------------
+# CACHE
+# Définition d'une zone de cache afin d'accélérer l'exécution entre plusieurs déploiements
+# -------------------------
+cache:
+  key: npm-cache
+  paths:
+    - $ELECTRON_CACHE_DIR/
+
+# -------------------------
+# PIPELINE
+# Liste des pipes à exécuter electron
+# -------------------------
+
+# -------------------------
+# INSTALL
+# Installation des dépendances :
+# - On utilise "ci" ou lieu "i" pour installer en utilisant le cache
+# -------------------------
+install-electron:
+  stage: install
+  script:
+    - cd $ELECTRON_DIR
+    - npm ci --cache $ELECTRON_CACHE_DIR --prefer-offline
+  artifacts:
+    paths:
+      - $ELECTRON_DIR/node_modules/
+
+# -------------------------
+# PRETTIER
+# Lancement de prettier pour formater le code
+# -------------------------
+prettier-electron:
+  stage: prettier
+  script:
+    - cd $ELECTRON_DIR
+    - mkdir -p .ci/logs
+    - echo "===== PRETTIER =====" | tee -a .ci/logs/prettier.log
+    - npm run prettier:check 2>&1 | tee -a .ci/logs/prettier.log
+  dependencies:
+    - install-electron
+  artifacts:
+    when: always
+    paths:
+      - $ELECTRON_DIR/.ci/logs/prettier.log
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^(main|test|develop)$/'
+  allow_failure: true
+
+# -------------------------
+# LINT
+# Lancement de l'eslint pour vérifier le code
+# -------------------------
+lint-electron:
+  stage: lint
+  script:
+    - cd $ELECTRON_DIR
+    - mkdir -p .ci/logs
+    - echo "===== LINT =====" | tee -a .ci/logs/lint.log
+    - npm run lint 2>&1 | tee -a .ci/logs/lint.log
+  dependencies:
+    - install-electron
+  artifacts:
+    when: always
+    paths:
+      - $ELECTRON_DIR/.ci/logs/lint.log
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^(main|test|develop)$/'
+  allow_failure: true
+
+# -------------------------
+# BUILD
+# Build de l'application :
+# - Une fois le build terminé, on renvoie les informations dans le dist
+# -------------------------
+build-electron:
+  stage: build
+  script:
+    - cd $ELECTRON_DIR
+    - npm run build
+  dependencies:
+    - install-electron
+  artifacts:
+    paths:
+      - $ELECTRON_DIR/dist/
+      - $ELECTRON_DIR/dist-electron/
+
+# -------------------------
+# TEST
+# Exécution des tests unitaires de l'application
+# -------------------------
+test-electron:
+  stage: test
+  image: trion/ng-cli-karma:latest
+  script:
+    - cd $ELECTRON_DIR
+    - mkdir -p .ci/logs
+    - echo "===== TEST =====" | tee -a .ci/logs/test.log
+    - npm run test:coverage -- --no-color 2>&1 | tee -a .ci/logs/test.log
+  dependencies:
+    - install-electron
+  artifacts:
+    when: always
+    paths:
+      - $ELECTRON_DIR/.ci/logs/test.log
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^(main|test|develop)$/'
+  allow_failure: true
+
+# -------------------------
+# DEPLOY
+# Vérification du déploiement :
+# - On vérifie si le dossier dist a bien été généré
+# -------------------------
+deploy-electron:
+  stage: deploy
+  script:
+    - echo "[INFO] Vérification des builds"
+
+    - if [ ! -d "$ELECTRON_DIR/dist" ]; then
+      echo "[ERROR] dist/ introuvable";
+      exit 1;
+      fi
+
+    - if [ ! -d "$ELECTRON_DIR/dist-electron" ]; then
+      echo "[ERROR] dist-electron/ introuvable";
+      exit 1;
+      fi
+
+    - echo "[SUCCESS] Build React + Electron valide"
+  dependencies:
+    - build-electron
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^(main)$/'
+
+# -------------------------
+# DOCS
+# Génération automatique de la documentation dans le dernier artefact
+# -------------------------
+docs-electron:
+  stage: docs
+  script:
+    - cd $ELECTRON_DIR
+    - npm run docs
+  artifacts:
+    paths:
+      - $ELECTRON_DIR/docs/
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^(main)$/'
+
+# -------------------------
+# DOCS
+# Collecte des logs des autres artefacts
+# -------------------------
+collect-logs-electron:
+  stage: docs
+  script:
+    - cd $ELECTRON_DIR
+    - mkdir -p .ci
+    - |
+      {
+        echo "===== ELECTRON PIPELINE LOGS ====="
+        echo "Commit: $CI_COMMIT_SHA"
+        echo "Branch: $CI_COMMIT_BRANCH"
+        echo "Pipeline: $CI_PIPELINE_ID"
+        echo ""
+      } > .ci/pipe.log
+
+      for f in .ci/logs/*.log; do
+        echo "" >> .ci/pipe.log
+        echo "----- $f -----" >> .ci/pipe.log
+        cat "$f" >> .ci/pipe.log
+      done
+  artifacts:
+    when: always
+    paths:
+      - $ELECTRON_DIR/.ci/pipe.log
+  needs:
+    - job: prettier-electron
+      optional: true
+    - job: lint-electron
+      optional: true
+    - job: test-electron
+      optional: true
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^(main|test|develop)$/'

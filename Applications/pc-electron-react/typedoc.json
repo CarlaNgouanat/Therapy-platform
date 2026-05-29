@@ -1,0 +1,18 @@
+{
+  "entryPoints": ["src", "electron", "shared", "database", "wsserver"],
+  "entryPointStrategy": "expand",
+  "out": "docs/projectDocsGen",
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "coverage/**",
+    "docs/**",
+    "dist/**",
+    "dist-electron/**",
+    "node_modules/**",
+    "test/**",
+    "src/components/ui/**"
+  ],
+  "excludePrivate": true,
+  "excludeProtected": true
+}
