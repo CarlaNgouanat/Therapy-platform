@@ -63,17 +63,6 @@ The core features are implemented, including patient management, exercise creati
 
 ---
 
-## Demo
-
-
-
-https://github.com/user-attachments/assets/9b608e49-a11d-4b42-be55-b0144ce77b64
-
-
-The demo also showcases an experimental tablet-oriented interface explored during the project to investigate how exercises could be displayed during therapy sessions.
-
----
-
 ## Design Prototype
 
 https://github.com/user-attachments/assets/6e5b90e4-b43c-424b-b85c-b12ef2eff05c
@@ -81,7 +70,14 @@ https://github.com/user-attachments/assets/6e5b90e4-b43c-424b-b85c-b12ef2eff05c
 
 The prototype was created to validate workflows and user interactions before implementation.
 
+## Demo
 
+https://github.com/user-attachments/assets/9b608e49-a11d-4b42-be55-b0144ce77b64
+
+
+The demo also showcases an experimental tablet-oriented interface explored during the project to investigate how exercises could be displayed during therapy sessions.
+
+---
 
 ## About the Project
 
