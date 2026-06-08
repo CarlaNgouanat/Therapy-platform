@@ -1,6 +1,6 @@
 #  DisMesMots
 
-A web application designed to help speech and language therapists manage aphasia rehabilitation sessions more efficiently.
+A web application built for French speech and language therapists to create, customize, and manage aphasia rehabilitation exercises and therapy sessions.
 
 ## Features
 
